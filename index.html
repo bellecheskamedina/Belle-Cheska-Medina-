@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+<meta charset="utf-8" />
+
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+
+<title>Student Attendance Monitoring — Demo</title>
+
+<style>
+
+  :root{
+
+    --bg:#f6f7fb; --card:#ffffff; --primary:#4f46e5; --muted:#6b7280;
+
+    --green:#10b981; --red:#ef4444; --blue:#3b82f6; --amber:#f59e0b;
+
+    --glass: rgba(255,255,255,0.8);
+
+    --radius:12px;
+
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+
+  }
+
+  html,body{height:100%; margin:0; background:var(--bg); color:#111827;}
+
+  .app{max-width:1200px; margin:28px auto; padding:18px;}
+
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+
+  h1{font-size:20px;margin:0}
+
+  nav{display:flex;gap:8px}
+
+  button.btn{border:0;padding:8px 12px;border-radius:8px;cursor:pointer;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,0.06)}
+
+  button.btn.active{background:var(--primary); color:#fff; box-shadow:none}
+
+  .meta{margin-top:14px;background:var(--card);padding:14px;border-radius:10px;box-shadow:0 6px 18px rgba(15,23,42,0.06)}
+
+  .meta-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+
+  @media(min-width:900px){ .meta-grid{grid-template-columns:repeat(6,1fr)} }
+
+  .meta-item{font-size:12px;color:var(--muted)} .meta-value{font-weight:600}
+
+  .search{display:flex;gap:8px;align-items:center}
+
+  input.search-field{padding:8px;border-radius:8px;border:1px solid #e5e7eb; min-width:180px}
+
+  main{margin-top:18px}
+
+  .grid-3{display:grid;grid-template-columns:1fr;gap:16px}
+
+  @media(min-width:900px){ .grid-3{grid-template-columns:2fr 1fr} }
+
+  .card{background:var(--card);padding:16px;border-radius:10px;box-shadow:0 6px 18px rgba(15,23,42,0.04)}
+
+  .stats{display:flex;gap:10px}
+
+  .stat{flex:1;padding:12px;border-radius:8px}
+
+  .stat h3{margin:0;font-size:12px;color:var(--muted)} .stat .big{font-size:20px;font-weight:700}
+
+  .student-list{margin-top:12px;max-height:320px;overflow:auto}
+
+  .student-row{display:flex;align-items:center;justify-content:space-between;padding:8px;border-radius:8px;background:#fafafa;margin-bottom:8px}
+
+  .legend div{margin-bottom:6px;font-size:14px}
+
+  table.sheet{width:100%;border-collapse:collapse;font-size:13px}
+
+  table.sheet thead th{position:sticky;top:0;background:#f3f4f6;padding:8px;border-bottom:1px solid #e6e7eb;text-align:center;font-weight:600}
+
+  table.sheet td, table.sheet th{border-right:1px solid #f3f4f6}
+
+  table.sheet tbody tr:hover{background:#fbfdff}
+
+  td.cell{width:36px;height:36px;padding:4px;text-align:center;vertical-align:middle}
+
+  .code{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:6px;font-weight:700}
+
+  .code.P{background:rgba(16,185,129,0.12);color:var(--green)}
+
+  .code.U{background:rgba(239,68,68,0.12);color:var(--red)}
+
+  .code.E{background:rgba(59,130,246,0.12);color:var(--blue)}
+
+  .code.T{background:rgba(245,158,11,0.12);color:var(--amber)}
+
+  .code.blank{background:#fff;color:#9ca3af;border:1px solid #f3f4f6}
+
+  .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+
+  .btn-cta{background:var(--primary);color:#fff;border-radius:8px;padding:8px 12px;border:0}
+
+  .student-card{display:flex;justify-content:space-between;align-items:center;gap:12px}
+
+  .timeline{display:flex;flex-wrap:wrap;gap:6px}
+
+  .day-pill{width:46px;height:42px;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px}
+
+  footer{margin-top:22px;text-align:center;color:#9ca3af;font-size:13px}
+
+  .small{font-size:13px;color:var(--muted)}
+
+  .sheet-wrap{overflow:auto;border-radius:10px;padding:10px;background:linear-gradient(180deg,#fff, #fff);}
+
+  .msg{padding:8px;border-radius:8px;background:#ecfeff;color:#064e3b;margin-top:8px}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="app" role="application" aria-label="Student Attendance Monitoring">
+
+<header>
+
+  <div>
+
+    <h1>Student Attendance Monitoring</h1>
+
+    <div class="small">University of San Agustin — CSIT 311 • Sir Jinon • MML — Oct (Q2)</div>
+
+  </div>
+
+  <div style="display:flex;align-items:center;gap:12px">
+
+    <nav>
+
+      <button id="nav-dashboard" class="btn active">Dashboard</button>
+
+      <button id="nav-sheet" class="btn">Attendance Sheet</button>
+
+      <button id="nav-student" class="btn">Student Details</button>
+
+    </nav>
+
+    <div class="search">
+
+      <input id="search" class="search-field" placeholder="Search student name or ID" />
+
+      <button id="exportCsv" class="btn">Export CSV</button>
+
+    </div>
+
+  </div>
+
+</header>
+
+ 
+
+<div class="meta">
+
+  <div class="meta-grid">
+
+    <div><div class="meta-item">School</div><div class="meta-value">University of San Agustin</div></div>
+
+    <div><div class="meta-item">Course</div><div class="meta-value">CSIT 311</div></div>
+
+    <div><div class="meta-item">Professor</div><div class="meta-value">Sir Jinon</div></div>
+
+    <div><div class="meta-item">Location</div><div class="meta-value">MML</div></div>
+
+    <div><div class="meta-item">Semester / Month</div><div class="meta-value">Q2 / Oct</div></div>
+
+    <div style="display:flex;align-items:center;justify-content:flex-end">
+
+      <div style="text-align:right">
+
+        <div class="meta-item">Selected</div><div id="selected-info" class="meta-value">—</div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+ 
+
+<main>
+
+  <!-- Dashboard -->
+
+  <div id="view-dashboard" class="grid-3">
+
+    <div class="card">
+
+      <h2 style="margin:0 0 10px 0">Class Overview</h2>
+
+      <div class="stats">
+
+        <div class="stat" style="background:linear-gradient(180deg,#eef2ff,#fff)">
+
+          <h3>Students</h3>
+
+          <div class="big" id="stat-count">0</div>
+
+        </div>
+
+        <div class="stat" style="background:linear-gradient(180deg,#ecfdf5,#fff)">
+
+          <h3>Avg. Present %</h3>
+
+          <div class="big" id="stat-present">0%</div>
+
+        </div>
+
+        <div class="stat" style="background:linear-gradient(180deg,#fff7ed,#fff)">
+
+          <h3>Unexcused (U)</h3>
+
+          <div class="big" id="stat-unexcused">0</div>
+
+        </div>
+
+      </div>
+
+ 
+
+      <div style="margin-top:14px">
+
+        <h3 style="margin:0 0 8px 0">Students</h3>
+
+        <div class="student-list" id="student-list"></div>
+
+      </div>
+
+    </div>
+
+ 
+
+    <aside class="card">
+
+      <h3>Legend & Quick Actions</h3>
+
+      <div class="legend" style="margin-top:8px">
+
+        <div><strong>P</strong> — Present</div>
+
+        <div><strong>U</strong> — Unexcused Absence</div>
+
+        <div><strong>E</strong> — Excused Absence</div>
+
+        <div><strong>T</strong> — Tardy</div>
+
+      </div>
+
+      <div class="controls">
+
+        <button class="btn-cta" id="sendReminder">Send Reminder</button>
+
+        <button class="btn" id="resetDemo">Reset Demo Data</button>
+
+      </div>
+
+    </aside>
+
+  </div>
+
+ 
+
+  <!-- Attendance sheet -->
+
+  <div id="view-sheet" style="display:none">
+
+    <div class="card sheet-wrap">
+
+      <div style="display:flex;justify-content:space-between;align-items:center">
+
+        <h2 style="margin:0">Attendance Sheet — Oct (31 days)</h2>
+
+        <div class="small">Tip: click a cell to cycle through P/U/E/T/Clear</div>
+
+      </div>
+
+      <div class="controls" style="margin-bottom:8px">
+
+        <!-- toolbar optional -->
+
+      </div>
+
+      <div style="margin-top:12px; overflow:auto">
+
+        <table class="sheet" id="attendance-table" role="table" aria-label="Attendance sheet">
+
+          <thead id="sheet-head"></thead>
+
+          <tbody id="sheet-body"></tbody>
+
+        </table>
+
+      </div>
+
+    </div>
+
+  </div>
+
+ 
+
+  <!-- Student details -->
+
+  <div id="view-student" style="display:none">
+
+    <div class="card">
+
+      <div class="student-card">
+
+        <div>
+
+          <h2 id="student-name" style="margin:0">—</h2>
+
+          <div class="small">ID <span id="student-id">—</span></div>
+
+        </div>
+
+        <div style="text-align:right">
+
+          <div class="small">Present %</div>
+
+          <div style="font-weight:700;font-size:22px" id="student-present">0%</div>
+
+        </div>
+
+      </div>
+
+ 
+
+      <div style="margin-top:12px;display:grid;gap:12px">
+
+        <div style="padding:12px;border-radius:8px;border:1px solid #f3f4f6">
+
+          <h3 style="margin:0 0 8px 0">Attendance Summary</h3>
+
+          <div class="small">
+
+            <div>P — Present: <span id="sum-P">0</span></div>
+
+            <div>U — Unexcused: <span id="sum-U">0</span></div>
+
+            <div>E — Excused: <span id="sum-E">0</span></div>
+
+            <div>T — Tardy: <span id="sum-T">0</span></div>
+
+            <div>Total recorded days: <span id="sum-total">0</span></div>
+
+          </div>
+
+        </div>
+
+ 
+
+        <div style="padding:12px;border-radius:8px;border:1px solid #f3f4f6">
+
+          <h3 style="margin:0 0 8px 0">Monthly Timeline</h3>
+
+          <div id="timeline" class="timeline"></div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</main>
+
+ 
+
+<footer>©2025 Attendance App — Demo</footer>
+
+</div>
+
+ 
+
+<script>
+
+(function(){
+
+  const DAYS = 31;
+
+  const CODES = ['P','U','E','T','']; // cycle
+
+  const sampleStudents = [
+
+    { id: '1234', name: 'Medina, Belle Cheska' },
+
+    { id: '2345', name: 'Meñez, Shanlhie Claude' },
+
+    { id: '4567', name: 'Neo, Nikko' },
+
+    { id: '9988', name: 'Palmares, Vince' },
+
+    { id: '1001', name: 'Perez, Caesar' },
+
+    { id: '1022', name: 'Porras, Timothy' },
+
+    { id: '1100', name: 'Talimay, Ramyrrh' },
+
+    { id: '1177', name: 'Villanueva, Al' }
+
+  ];
+
+ 
+
+  function makeInitialAttendance(students){
+
+    const att = {};
+
+    students.forEach(s=>{ att[s.id] = Array.from({length:DAYS}).map(()=> ''); });
+
+    return att;
+
+  }
+
+ 
+
+  let students = JSON.parse(JSON.stringify(sampleStudents));
+
+  let attendance = makeInitialAttendance(students);
+
+  let selectedStudentId = students[0]?.id || null;
+
+ 
+
+  const elems = {
+
+    navDashboard: document.getElementById('nav-dashboard'),
+
+    navSheet: document.getElementById('nav-sheet'),
+
+    navStudent: document.getElementById('nav-student'),
+
+    viewDashboard: document.getElementById('view-dashboard'),
+
+    viewSheet: document.getElementById('view-sheet'),
+
+    viewStudent: document.getElementById('view-student'),
+
+    studentList: document.getElementById('student-list'),
+
+    statCount: document.getElementById('stat-count'),
+
+    statPresent: document.getElementById('stat-present'),
+
+    statUnexcused: document.getElementById('stat-unexcused'),
+
+    sheetHead: document.getElementById('sheet-head'),
+
+    sheetBody: document.getElementById('sheet-body'),
+
+    search: document.getElementById('search'),
+
+    selectedInfo: document.getElementById('selected-info'),
+
+    studentName: document.getElementById('student-name'),
+
+    studentId: document.getElementById('student-id'),
+
+    studentPresent: document.getElementById('student-present'),
+
+    sumP: document.getElementById('sum-P'),
+
+    sumU: document.getElementById('sum-U'),
+
+    sumE: document.getElementById('sum-E'),
+
+    sumT: document.getElementById('sum-T'),
+
+    sumTotal: document.getElementById('sum-total'),
+
+    timeline: document.getElementById('timeline'),
+
+    exportCsv: document.getElementById('exportCsv'),
+
+    resetDemo: document.getElementById('resetDemo'),
+
+    sendReminder: document.getElementById('sendReminder')
+
+  };
+
+ 
+
+  // Navigation
+
+  elems.navDashboard.addEventListener('click', ()=>show('dashboard'));
+
+  elems.navSheet.addEventListener('click', ()=>show('sheet'));
+
+  elems.navStudent.addEventListener('click', ()=>show('student'));
+
+  elems.search.addEventListener('input', renderAll);
+
+  elems.exportCsv.addEventListener('click', exportCSV);
+
+  elems.resetDemo.addEventListener('click', ()=>{ attendance = makeInitialAttendance(students); renderAll(); });
+
+  elems.sendReminder.addEventListener('click', ()=>alert('Reminders sent (demo).'));
+
+ 
+
+  // Add/Delete Student Buttons
+
+  const controlsDiv = document.querySelector('aside.card .controls');
+
+ 
+
+  const addBtn = document.createElement('button');
+
+  addBtn.className = 'btn-cta';
+
+  addBtn.textContent = 'Add Student';
+
+  addBtn.addEventListener('click', ()=>{
+
+    const name = prompt('Enter student name:'); if(!name) return;
+
+    const id = prompt('Enter student ID:'); if(!id) return;
+
+    if(students.find(s=>s.id===id)){ alert('Student ID already exists!'); return; }
+
+    students.push({id,name});
+
+    attendance[id] = Array.from({length:DAYS}).map(()=> '');
+
+    renderAll();
+
+  });
+
+  controlsDiv.appendChild(addBtn);
+
+ 
+
+  const deleteBtn = document.createElement('button');
+
+  deleteBtn.className = 'btn';
+
+  deleteBtn.textContent = 'Delete Student';
+
+  deleteBtn.addEventListener('click', ()=>{
+
+    if(!selectedStudentId) return alert('No student selected!');
+
+    if(!confirm('Delete student "' + (students.find(s=>s.id===selectedStudentId)?.name || '') + '"?')) return;
+
+    students = students.filter(s=>s.id!==selectedStudentId);
+
+    delete attendance[selectedStudentId];
+
+    selectedStudentId = students[0]?.id || null;
+
+    renderAll();
+
+  });
+
+  controlsDiv.appendChild(deleteBtn);
+
+ 
+
+  function show(view){
+
+    elems.navDashboard.classList.remove('active');
+
+    elems.navSheet.classList.remove('active');
+
+    elems.navStudent.classList.remove('active');
+
+    elems.viewDashboard.style.display='none';
+
+    elems.viewSheet.style.display='none';
+
+    elems.viewStudent.style.display='none';
+
+    if(view==='dashboard'){ elems.navDashboard.classList.add('active'); elems.viewDashboard.style.display='grid'; }
+
+    if(view==='sheet'){ elems.navSheet.classList.add('active'); elems.viewSheet.style.display='block'; }
+
+    if(view==='student'){ elems.navStudent.classList.add('active'); elems.viewStudent.style.display='block'; }
+
+    elems.selectedInfo.textContent = (view==='student')?(selectedStudentId||'—'):(view.charAt(0).toUpperCase()+view.slice(1));
+
+    renderAll();
+
+  }
+
+ 
+
+  function totalsFor(studentId){
+
+    const arr = attendance[studentId] || Array.from({length:DAYS}).map(()=> '');
+
+    const totals = {P:0,U:0,E:0,T:0,total:0};
+
+    arr.forEach(c=>{
+
+      if(!c) return;
+
+      totals.total++;
+
+      if(c in totals) totals[c] += 1;
+
+    });
+
+    totals.presentPct = totals.total ? Math.round((totals.P / totals.total)*100) : 0;
+
+    return totals;
+
+  }
+
+ 
+
+  function renderSheetHead(){
+
+    const tr = document.createElement('tr');
+
+    const thStudent = document.createElement('th'); thStudent.textContent='Student'; thStudent.style.textAlign='left';
+
+    const thId = document.createElement('th'); thId.textContent='ID';
+
+    tr.appendChild(thStudent); tr.appendChild(thId);
+
+    for(let d=1; d<=DAYS; d++){ const th=document.createElement('th'); th.textContent=d; tr.appendChild(th);}
+
+    ['P','U','E','T','%'].forEach(t=>{ const th=document.createElement('th'); th.textContent=t; tr.appendChild(th); });
+
+    elems.sheetHead.innerHTML=''; elems.sheetHead.appendChild(tr);
+
+  }
+
+ 
+
+  function filteredStudents(){ const q = elems.search.value.trim().toLowerCase(); if(!q) return students; return students.filter(s=>s.name.toLowerCase().includes(q) || s.id.includes(q)); }
+
+ 
+
+  function renderSheetBody(){
+
+    elems.sheetBody.innerHTML='';
+
+    filteredStudents().forEach(s=>{
+
+      const tr=document.createElement('tr');
+
+      const tdName=document.createElement('td'); tdName.style.padding='8px 10px'; tdName.style.textAlign='left';
+
+      tdName.innerHTML=`<div style="font-weight:600">${escapeHtml(s.name)}</div><button data-open="${s.id}" style="margin-top:4px;border:0;background:none;color:${getComputedStyle(document.documentElement).getPropertyValue('--primary')};cursor:pointer;font-size:12px">Open</button>`;
+
+      const tdId=document.createElement('td'); tdId.style.padding='8px 10px'; tdId.textContent=s.id;
+
+      tr.appendChild(tdName); tr.appendChild(tdId);
+
+ 
+
+      const rowAttendance = attendance[s.id] || Array.from({length:DAYS}).map(()=>'');
+
+ 
+
+      rowAttendance.forEach((c, idx)=>{
+
+        const td=document.createElement('td'); td.className='cell'; td.style.padding='4px';
+
+        const div=document.createElement('div'); div.className='code '+(c||'blank'); div.textContent=c||'';
+
+        div.style.cursor='pointer';
+
+        div.addEventListener('click', ()=>{
+
+          const current = div.textContent;
+
+          const i = CODES.indexOf(current);
+
+          const next = CODES[(i+1)%CODES.length];
+
+          div.textContent = next; div.className = 'code '+(next||'blank');
+
+          attendance[s.id][idx] = next; renderAll();
+
+        });
+
+        td.appendChild(div); tr.appendChild(td);
+
+      });
+
+ 
+
+      const t=totalsFor(s.id);
+
+      ['P','U','E','T'].forEach(k=>{ const td=document.createElement('td'); td.style.padding='8px'; td.textContent=t[k]; tr.appendChild(td); });
+
+      const tdPct=document.createElement('td'); tdPct.style.padding='8px'; tdPct.textContent=t.presentPct+'%'; tr.appendChild(tdPct);
+
+ 
+
+      elems.sheetBody.appendChild(tr);
+
+    });
+
+ 
+
+    elems.sheetBody.querySelectorAll('button[data-open]').forEach(btn=>{
+
+      btn.addEventListener('click', e=>{
+
+        selectedStudentId = e.currentTarget.getAttribute('data-open');
+
+        show('student');
+
+      });
+
+    });
+
+  }
+
+ 
+
+  function renderStudentList(){
+
+    const container=elems.studentList; container.innerHTML='';
+
+    filteredStudents().forEach(s=>{
+
+      const totals=totalsFor(s.id);
+
+      const div=document.createElement('div'); div.className='student-row';
+
+      div.innerHTML=`<div><div style="font-weight:600">${escapeHtml(s.name)}</div><div class="small">ID ${s.id}</div></div><div style="text-align:right"><div class="small">${totals.P}P • ${totals.U}U • ${totals.E}E • ${totals.T}T</div><button class="btn" data-view="${s.id}" style="margin-top:6px">View</button></div>`;
+
+      container.appendChild(div);
+
+    });
+
+    container.querySelectorAll('button[data-view]').forEach(b=>{
+
+      b.addEventListener('click', ev=>{
+
+        selectedStudentId=ev.currentTarget.getAttribute('data-view');
+
+        show('student');
+
+      });
+
+    });
+
+  }
+
+ 
+
+  function renderStats(){
+
+    const list=filteredStudents();
+
+    elems.statCount.textContent=list.length;
+
+    const avg=Math.round(list.reduce((acc,s)=>acc+totalsFor(s.id).presentPct,0)/Math.max(1,list.length));
+
+    elems.statPresent.textContent=avg+'%';
+
+    const totalU=list.reduce((acc,s)=>acc+totalsFor(s.id).U,0);
+
+    elems.statUnexcused.textContent=totalU;
+
+  }
+
+ 
+
+  function renderStudentDetail(){
+
+    const id=selectedStudentId;
+
+    const student=students.find(s=>s.id===id);
+
+    if(!student){ elems.studentName.textContent='—'; elems.studentPresent.textContent='0%'; elems.studentId.textContent='—'; elems.sumP.textContent='0'; elems.sumU.textContent='0'; elems.sumE.textContent='0'; elems.sumT.textContent='0'; elems.sumTotal.textContent='0'; elems.timeline.innerHTML=''; return; }
+
+    elems.studentName.textContent=student.name; elems.studentId.textContent=student.id;
+
+    const t=totalsFor(id); elems.studentPresent.textContent=t.presentPct+'%'; elems.sumP.textContent=t.P; elems.sumU.textContent=t.U; elems.sumE.textContent=t.E; elems.sumT.textContent=t.T; elems.sumTotal.textContent=t.total;
+
+    elems.timeline.innerHTML='';
+
+    (attendance[id]||Array.from({length:DAYS}).map(()=>'')) .forEach((c,i)=>{
+
+      const d=document.createElement('div'); d.className='day-pill';
+
+      d.style.background = c==='P' ? 'rgba(16,185,129,0.1)':c==='U'?'rgba(239,68,68,0.08)':c==='E'?'rgba(59,130,246,0.08)':c==='T'?'rgba(245,158,11,0.08)':'#f8fafc';
+
+      d.style.border='1px solid #f3f4f6';
+
+      d.innerHTML=`<div style="font-weight:700">${i+1}</div><div style="font-size:11px;color:#374151">${c||''}</div>`;
+
+      elems.timeline.appendChild(d);
+
+    });
+
+  }
+
+ 
+
+  function renderAll(){ renderStudentList(); renderStats(); renderSheetHead(); renderSheetBody(); renderStudentDetail(); }
+
+ 
+
+  function exportCSV(){
+
+    const list=filteredStudents();
+
+    const headers=['Name','ID',...Array.from({length:DAYS}).map((_,i)=>'D'+(i+1)),'P','U','E','T','PresentPct'];
+
+    const rows=[headers.join(',')];
+
+    list.forEach(s=>{
+
+      const row=[]; row.push(`"${s.name.replace(/"/g,'""')}"`); row.push(s.id);
+
+      const arr=attendance[s.id]||Array.from({length:DAYS}).map(()=>''); arr.forEach(c=>row.push(c||''));
+
+      const t=totalsFor(s.id); row.push(t.P,t.U,t.E,t.T,t.presentPct+'%'); rows.push(row.join(','));
+
+    });
+
+    const csv=rows.join('\n'); const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+
+    const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='attendance_export.csv';
+
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+
+  }
+
+ 
+
+  function escapeHtml(str){ return String(str).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+ 
+
+  document.addEventListener('keydown', e=>{
+
+    if((e.ctrlKey||e.metaKey)&&e.key==='1') show('dashboard');
+
+    if((e.ctrlKey||e.metaKey)&&e.key==='2') show('sheet');
+
+    if((e.ctrlKey||e.metaKey)&&e.key==='3') show('student');
+
+  });
+
+ 
+
+  renderAll(); show('dashboard');
+
+})();
+
+</script>
+
+</body>
+
+</html>
